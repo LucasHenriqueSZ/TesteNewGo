@@ -1,0 +1,35 @@
+version: '3.9'
+services:
+  db:
+    image: postgres:latest
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_DB: virtual_disk
+    ports:
+      - 5432:5432
+    expose:
+      - 5432
+    networks:
+        - vtdisk-network
+
+  virtual-disk:
+    image: virtual-disk:latest
+    restart: always
+    ports:
+      - 80:80
+    command: mvn spring-boot:run
+    networks:
+        - vtdisk-network
+    depends_on:
+        - db
+    build: ./virtualDisk
+    working_dir: /virtualDisk
+    environment:
+      - spring.datasource.url=jdbc:postgresql://db:5432/virtual_disk
+      - spring.datasource.username=postgres
+      - spring.datasource.password=postgres
+networks:
+  vtdisk-network:
+     driver: bridge

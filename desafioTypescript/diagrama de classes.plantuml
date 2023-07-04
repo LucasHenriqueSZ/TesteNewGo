@@ -1,0 +1,40 @@
+@startuml class diagram
+title virtual disk with Composite
+
+Component <|-- Folder
+Component <|-- File
+Folder "1" o--> "0..*" File
+Folder "1" o--> "0..*" Folder
+
+interface Component{
+    getSize(): number
+    getName(): string
+    getType(): string
+    addComponent(component: component): void
+    removeComponent(component: component): void
+    getComponent(name: String): component | null
+}
+
+class Folder{
+    -name: String
+
+    + getSize(): number
+    + getName(): string
+    + getType(): string
+    + addComponent(component: component): void
+    + removeComponent(component: component): void
+    + getComponent(name: String): component | null
+}
+
+class File{
+    - name: string
+    - type: string
+    - size: number
+
+    + getSize(): number
+    + getName(): string
+    + getType(): string
+    
+}
+
+@enduml

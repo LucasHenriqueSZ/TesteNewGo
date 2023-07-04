@@ -1,0 +1,2 @@
+﻿INSERT INTO users (user_name, full_name, password, account_non_expired, account_non_locked, credentials_non_expired, enabled) VALUES
+	('VtDisk', 'Virtual Disk', '2b22e7006fe652fe39658ef8d3808f59d0736bfd7ad7ecbae0f8319210f49c70ca3d54a6b2cc3b9c', true, true, true, true);

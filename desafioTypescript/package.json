@@ -1,0 +1,16 @@
+{
+  "name": "desafiotypescript",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+   "dev" : "sucrase-node src/index.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "sucrase": "^3.32.0",
+    "typescript": "^5.1.6"
+  }
+}

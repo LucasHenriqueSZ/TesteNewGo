@@ -1,0 +1,221 @@
+@startuml class diagram
+
+Controller ..> Service
+Controller --> Dto
+Service ..> Repository
+Service --> Dto
+Service --> Model
+Repository ..> Model
+
+package "Controller" #DDDDDD {
+
+    class DiskController{
+        + createFolderInRoot(folderDto:CreateFolderDto) :FolderDto
+        + createFolder(parentFolder:String, folderDto:CreateFolderDto) :FolderDto
+        + getFolderRoot() :FolderDto
+        + getFolder(folderName:String) :FolderDto
+        + deleteFolder(folderName:String) :void
+        + getFolderSizeRoot() :long
+        + getFolderSize(folderName:String) :long
+        + downloadFileInRoot(fileName:String, request:HttpServletRequest) :Resource
+        + downloadFile(folderName:String, fileName:String, request:HttpServletRequest) :Resource
+        + getFileInRoot(fileName:String) :List<FileDto>
+        + getFile(folderName:String , fileName:String) :List<FileDto>
+        + uploadFileInRoot(file:MultipartFile) :FileDto
+        + uploadFile(folderName:String, file:MultipartFile) :FileDto
+        + deleteFileInRoot(fileName:String) :void
+        + deleteFile(folderName:String, fileName:String) :void
+    }
+
+    class UserController{
+        + createUser(userDto:UserDto) :UserDto
+        + findById(id:Long) :UserDto
+    }
+
+    class AuthenticationController{
+        + signIn(accountCredentialsDto:AccountCredentialsDto) :TokenDto
+        + refreshToken(username:String, refreshToken:String) :TokenDto
+    }
+}
+
+
+package "Dto" #DDDDDD {
+
+    class UserDto{
+        - Long id
+        - String username
+        - String fullname
+        - String password
+        - List<String> permissions
+    }
+
+    class FolderDto{
+        - String name
+        - String user
+        - String parentFolder
+        - List<String> subFolders
+        - List<String> files
+    }
+
+    class FileDto{
+        - String name
+        - String type
+        - long size
+        - String folder
+    }
+
+    class CreateFolderDto{
+        - folderName:String
+    }
+
+    package "Dto.Security" #DDDDDD {
+
+        class AccountCredentialsDto{
+            - String username
+            - String password
+
+
+        }
+
+        class TokenDto{
+            - String username
+            - Boolean authenticated
+            - Date created
+            - Date expiration
+            - String acessToken
+            - String refreshToken
+        }
+    }
+}
+
+package "Service" #DDDDDD {
+
+    class AuthenticationServices{
+        + signin(data:AccountCredentialsDto) :TokenDto
+        + refreshToken(username:String, refreshToken:String) :TokenDto
+    }
+
+    class DiskService{
+        + createFolder(parentFolder:String, folderDto:CreateFolderDto) :FolderDto
+        + getFolder(folderName:String) :FolderDto
+        + deleteFolder(folderName:String) :void
+        + getFolderSize(folderName:String) :long
+        + uploadFile(foldername:String, file:MultipartFile) :FileDto
+        + getFile(folderName:String, fileName:String) :List<FileDto>
+        + downloadFile(folderName:String, fileName:String) :Resource
+        + deleteFile(folderName:String, fileName:String) :void
+        - getCurrentUser() :User
+        - checkFolderNameExistsInUser(folderName:String, user:User) :void
+        - getFolderByNameAndUser(String parentFolder, user:User) :Folder
+        - calculateFolderSize(folder:Folder) :long
+        - deleteFilesInMemoryInFolders(folder:Folder) :void
+        - validateFolderNameAndFileName(folderName:String, fileName:String) :void
+    }
+
+    class FileStorageService{
+        + SavedStoreFile(file:MultipartFile) :String
+        + loadFileAsResource(fileName:String) :Resource
+        + deleteFilesInMemory(fileName:String) :void
+    }
+
+    class UserServices{
+        + createUser(userDto:UserDto) :UserDto
+        + findById(id:Long) :UserDto
+        - checkUser(user:UserDto):void
+        - listRolesToPermissions(permissions:List<String>) :List<Permission>
+    }
+    DiskService ..> FileStorageService
+}
+
+
+
+package "Repository" #DDDDDD {
+
+    interface FileRepository{
+        findByfile(type:String, size:long) :File
+        findByFullNameAndFolder(fullName:String, folder:Folder) :  List<File>
+    }
+
+    interface FolderRepository{
+        findByNameAndUser(parentFolder:String, user:User) :Folder
+    }
+
+    interface PermissionRepository{
+        findByDescription(description:String) :Permission
+    }
+
+    interface UserRepository{
+        findByUserName(userName:String) :User
+    }
+}
+
+
+package "Model" #DDDDDD {
+
+    Folder --o "1" User
+    Folder "1" o--> "0..*" File
+    Folder "1" o--> "0..*" Folder
+    User --> "*" Permission
+
+    class User{
+        - long id
+        - String username
+        - String fullName
+        - String password
+        - Boolean enabled
+    }
+
+    class Folder{
+        - long id
+        - String name
+        + getSubFoldersNames() :List<String>
+        + getFilesNames() :List<String>
+    }
+
+    class File{
+        - long id
+        - String name
+        - String type
+        - long size
+    }
+
+    class Permission{
+        - Long id
+        - String description
+    }
+}
+@enduml
+
+
+@startuml sequence diagram
+title Create Folder
+
+actor User
+entity CreateFolderDto
+entity DiskController
+entity DiskService
+entity folderRepository
+entity Folder
+entity ModelMapper
+entity FolderDto
+
+User -> CreateFolderDto : createFolderDto(folderName)
+CreateFolderDto -> DiskController : createFolder(parentFolder,createFolderDto)
+DiskController -> DiskService : createFolder(parentFolder,createFolderDto)
+DiskService -> DiskService : getCurrentUser()
+DiskService -> CreateFolderDto : getFolderName()
+DiskService -> DiskService : checkFolderNameExistsInUser(folderName, user)
+DiskService -> folderRepository : findByNameAndUser(folderName, user)
+DiskService -> DiskService : getFolderByNameAndUser(parentFolder, user)
+DiskService -> folderRepository : findByNameAndUser(parentFolder, user)
+DiskService -> Folder : Folder(folderName, user, parentFolder)
+DiskService -> folderRepository : save(folder)
+DiskService -> ModelMapper : parseObject(folder, FolderDto.class)
+ModelMapper -> FolderDto : FolderDto()
+DiskService -> FolderDto : setParentFolder(parentFolder)
+DiskService -> FolderDto : add(link)
+DiskService -> FolderDto : add(link)
+DiskService --> DiskController : return FolderDto
+DiskController --> User : return FolderDto
+
+@enduml
